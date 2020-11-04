@@ -6,8 +6,13 @@ import Item from "./Item.js";
 import useInterval from "../hooks/use-interval.hook";
 import useDocumentTitle from "../hooks/use-documentTitle";
 import useKeyDown from "../hooks/use-keydown";
+import SmallCookie from "./SmallCookie";
+import HandCursor from "./HandCursor";
+import cursorSrc from "../cursorHand.png";
 
-// Though I completed, if I could do it again, I would make items a large {} so that it's easier and less messier....
+// Q: can't make cookie picture responsive
+
+// I would make items a large {} so that it's easier and less messier....
 const items = [
   { id: "cursor", name: "Cursor", cost: 10, value: 1, type: "tick" },
   { id: "grandma", name: "Grandma", cost: 100, value: 10, type: "tick" },
@@ -24,13 +29,27 @@ const items = [
 const initialCookie = 1000;
 let x = 5; // the base exp
 let initialClick = 1;
+// used by the falling cookies
+const backgroundCookieN = 15; // number of cookies falling from the background
+const backgroundCookieArray = [];
+while (backgroundCookieArray.length < backgroundCookieN) {
+  backgroundCookieArray.push(true);
+}
+// used by cursors
+const cursorHandN = 5; // number of cookies falling from the background
+const cursorHandArray = [];
+while (cursorHandArray.length < cursorHandN) {
+  cursorHandArray.push(true);
+}
 
 const Game = () => {
   // TODO: Replace this with React state!
   // ========================= hooks =========================
   const [perSec, setPerSec] = useState(0);
+  const refImg = useRef(null);
   const [perClick, setPerClick] = useState(initialClick);
   const [numCookies, setNumC] = useState(initialCookie);
+  const [wCookie, setWC] = useState(400);
   const [purchasedItems, setPurchasedI] = useState({
     cursor: { num: 0, type: "tick" },
     grandma: { num: 0, type: "tick" },
@@ -65,8 +84,9 @@ const Game = () => {
 
   // change title
   useDocumentTitle("", `${numCookies}`);
-
+  // handle clicking
   const handleCookieClick = () => {
+    // update parameters
     setPerSec(perSec + perClick);
     setNumC(numCookies + perClick);
   };
@@ -107,6 +127,11 @@ const Game = () => {
   //console.log(purchasedItems);
   return (
     <Wrapper>
+      {backgroundCookieArray.map((ele, ind) => {
+        return (
+          <SmallCookie key={`bkgCookie-${ind}`} imgSrc={cookieSrc} ind={ind} />
+        );
+      })}
       <GameArea>
         <Indicator>
           <Total>{numCookies} cookies</Total>
@@ -120,7 +145,30 @@ const Game = () => {
           cookies per second
         </Indicator>
         <Button onClick={handleCookieClick}>
-          <Cookie src={cookieSrc} />
+          {cursorHandArray.map((ele, ind) => {
+            return (
+              <HandCursor
+                cursorSrc={cursorSrc}
+                ind={ind}
+                cen={() => {
+                  return [refImg.styled.x, refImg.styled.y];
+                }}
+                key={`cursorHand-${ind}`}
+              />
+            );
+          })}
+          <Cookie
+            src={cookieSrc}
+            onMouseUp={() => {
+              setWC(400);
+            }}
+            onMouseDown={() => {
+              setWC(wCookie * 0.9);
+            }}
+            id="cookie-img"
+            ref={refImg}
+            w={wCookie}
+          />
         </Button>
       </GameArea>
 
@@ -153,6 +201,8 @@ const Game = () => {
 const Wrapper = styled.div`
   display: flex;
   height: 100vh;
+  position: relative;
+  overflow: hidden;
 `;
 const GameArea = styled.div`
   flex: 1;
@@ -160,13 +210,17 @@ const GameArea = styled.div`
   place-items: center;
 `;
 const Button = styled.button`
+  position: relative;
   border: none;
   background: transparent;
   cursor: pointer;
+  :focus {
+    outline: none;
+  }
 `;
 
 const Cookie = styled.img`
-  width: 200px;
+  width: ${(prop) => `${prop.w}px`};
 `;
 
 const ItemAlign = styled.div`
@@ -210,4 +264,5 @@ const HomeLink = styled(Link)`
   color: #666;
 `;
 
+export { backgroundCookieArray };
 export default Game;
